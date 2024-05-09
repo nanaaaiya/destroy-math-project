@@ -6,6 +6,7 @@ import java.util.Random;
 public class CompleteGraphDrawer extends JFrame {
     private JTextField nodesInput;
     private JButton drawButton;
+    private JButton findMSTButton;
     private GraphPanel graphPanel;
 
     public CompleteGraphDrawer() {
@@ -19,15 +20,21 @@ public class CompleteGraphDrawer extends JFrame {
 
         nodesInput = new JTextField(10);
         drawButton = new JButton("Draw");
+        findMSTButton = new JButton("Find MST");
+        findMSTButton.setPreferredSize(new Dimension(120, 30)); // Set preferred size
+
         drawButton.addActionListener(new DrawButtonListener());
+        findMSTButton.addActionListener(new FindMSTButtonListener());
 
         panel.add(new JLabel("Number of Nodes:"));
         panel.add(nodesInput);
         panel.add(drawButton);
+        panel.add(findMSTButton);
 
         graphPanel = new GraphPanel();
         add(panel, BorderLayout.NORTH);
         add(graphPanel, BorderLayout.CENTER);
+        add(findMSTButton, BorderLayout.SOUTH);
 
         setVisible(true);
     }
@@ -40,6 +47,13 @@ public class CompleteGraphDrawer extends JFrame {
             graphPanel.setNumNodes(numNodes);
             graphPanel.generateWeights();
             graphPanel.repaint();
+        }
+    }
+
+    private class FindMSTButtonListener implements ActionListener {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            JOptionPane.showMessageDialog(CompleteGraphDrawer.this, "Hi there!");
         }
     }
 
