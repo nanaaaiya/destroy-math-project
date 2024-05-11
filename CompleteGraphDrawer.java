@@ -93,12 +93,19 @@ public class CompleteGraphDrawer extends JFrame {
             int centerY = getHeight() / 2;
             double angleStep = 2 * Math.PI / numNodes;
 
+            Graphics2D g2 = (Graphics2D) g.create(); // Create a Graphics2D object from Graphics
+
             // Draw nodes
             for (int i = 0; i < numNodes; i++) {
                 int x = (int) (centerX + radius * Math.cos(i * angleStep));
                 int y = (int) (centerY + radius * Math.sin(i * angleStep));
                 g.fillOval(x - 5, y - 5, 10, 10);
             }
+
+             // Set the alpha composite for transparency
+            float alpha = 0.5f; // 50% transparent
+            AlphaComposite alcom = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha);
+            g2.setComposite(alcom);
 
             // Draw edges (complete graph) with weights
             for (int i = 0; i < numNodes; i++) {
@@ -109,15 +116,16 @@ public class CompleteGraphDrawer extends JFrame {
                     int y2 = (int) (centerY + radius * Math.sin(j * angleStep));
 
                     // Draw edge
-                    g.drawLine(x1, y1, x2, y2);
+                    g2.drawLine(x1, y1, x2, y2);
 
                     // Calculate position for weight label
                     int labelX = (x1 + x2) / 2;
                     int labelY = (y1 + y2) / 2;
                     // Draw weight label
-                    g.drawString(String.valueOf(weights[i][j]), labelX, labelY);
+                    g2.drawString(String.valueOf(weights[i][j]), labelX, labelY);
                 }
             }
+            g2.dispose();
         }
 
         @Override
