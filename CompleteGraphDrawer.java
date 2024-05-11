@@ -12,7 +12,7 @@ public class CompleteGraphDrawer extends JFrame {
     public CompleteGraphDrawer() {
         setTitle("Weighted Complete Graph Drawer");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(500, 500);
+        setSize(600, 650);
         setLocationRelativeTo(null);
 
         JPanel panel = new JPanel();
@@ -43,10 +43,14 @@ public class CompleteGraphDrawer extends JFrame {
         @Override
         public void actionPerformed(ActionEvent e) {
             String input = nodesInput.getText();
-            int numNodes = Integer.parseInt(input);
-            graphPanel.setNumNodes(numNodes);
-            graphPanel.generateWeights();
-            graphPanel.repaint();
+            try {
+                int numNodes = Integer.parseInt(input);
+                graphPanel.setNumNodes(numNodes);
+                graphPanel.generateWeights();
+                graphPanel.repaint();
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(CompleteGraphDrawer.this, "Please enter a valid number.");
+            }
         }
     }
 
@@ -84,7 +88,7 @@ public class CompleteGraphDrawer extends JFrame {
         @Override
         protected void paintComponent(Graphics g) {
             super.paintComponent(g);
-            int radius = 100;
+            int radius = 200; // change this to make the graph larger or smaller
             int centerX = getWidth() / 2;
             int centerY = getHeight() / 2;
             double angleStep = 2 * Math.PI / numNodes;
@@ -118,7 +122,7 @@ public class CompleteGraphDrawer extends JFrame {
 
         @Override
         public Dimension getPreferredSize() {
-            return new Dimension(400, 400);
+            return new Dimension(500, 500);
         }
     }
 
