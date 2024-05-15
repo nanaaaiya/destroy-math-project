@@ -1,7 +1,11 @@
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.awt.image.BufferedImage;
 import java.util.Random;
+import javax.imageio.ImageIO;
+import java.io.File;
+import java.io.IOException;
 
 public class CompleteGraphDrawer extends JFrame {
     private JTextField nodesInput;
@@ -12,7 +16,7 @@ public class CompleteGraphDrawer extends JFrame {
     public CompleteGraphDrawer() {
         setTitle("Weighted Complete Graph Drawer");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(600, 650);
+        setSize(800, 800);
         setLocationRelativeTo(null);
 
         JPanel panel = new JPanel();
@@ -37,6 +41,7 @@ public class CompleteGraphDrawer extends JFrame {
         add(findMSTButton, BorderLayout.SOUTH);
 
         setVisible(true);
+        graphPanel.loadbackgroundImages();
     }
 
     private class DrawButtonListener implements ActionListener {
@@ -46,6 +51,7 @@ public class CompleteGraphDrawer extends JFrame {
                 int numNodes = Integer.parseInt(nodesInput.getText());
                 graphPanel.setNumNodes(numNodes);
                 graphPanel.generateWeights();
+                graphPanel.loadImages(); // load the images after submit # vertices.
                 graphPanel.setDrawMST(false); // Use the setter here
                 graphPanel.repaint();
             } catch (NumberFormatException ex) {
@@ -76,7 +82,33 @@ public class CompleteGraphDrawer extends JFrame {
         private int numNodes;
         public int[][] weights;
         private int[] mstEdges; // Stores the indices of the nodes connecting MST edges
-        
+        private BufferedImage monkeyImage;
+        private BufferedImage bananaImage;
+        private BufferedImage backgroundImage;
+
+        private int monkeyWidth = 110;
+        private int monkeyHeight = 110;
+        private int bananaWidth = 60;
+        private int bananaHeight = 60;
+
+        public void loadImages() {
+            // Load the images from file
+            try {
+                monkeyImage = ImageIO.read(new File("monkey.jpg"));
+                bananaImage = ImageIO.read(new File("banana.png"));
+                //backgroundImage = ImageIO.read(new File("background.jpg"));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        public void loadbackgroundImages() {
+            try {
+                backgroundImage = ImageIO.read(new File("background.jpg"));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
         public int[][] getWeights() {
             return weights;
         }
@@ -140,13 +172,29 @@ public class CompleteGraphDrawer extends JFrame {
         public void generateWeights() {
             weights = new int[numNodes][numNodes];
             Random random = new Random();
+
+            // Create a random spanning tree to guarantee connected
+            for (int i = 1; i < numNodes; i++) {
+                int j = random.nextInt(i);
+                int weight = random.nextInt(20) + 1; // Random integer between 1 and 20
+                weights[i][j] = weight;
+                weights[j][i] = weight; // Graph is undirected, so weight is symmetric
+                }
+
+            // Add random edges to the graph
             for (int i = 0; i < numNodes; i++) {
-                for (int j = i + 1; j < numNodes; j++) {
-                    int weight = random.nextInt(20) + 1; // Random integer between 1 and 20
-                    weights[i][j] = weight;
-                    weights[j][i] = weight; // Graph is undirected, so weight is symmetric
+                for (int j = i+1; j < numNodes; j++) {
+                    if (weights[i][j] == 0) {
+                        if (random.nextDouble() < 0.5) {
+                            int weight = random.nextInt(20) + 1;
+                            weights[i][j] = weight;
+                            weights[j][i] = weight;
+                        }
+                    }
                 }
             }
+            
+
         }        
 
     private boolean drawMST = false;
@@ -159,10 +207,14 @@ public class CompleteGraphDrawer extends JFrame {
         return drawMST;
     }
 
-    // Inside your GraphPanel's paintComponent
+    // Inside GraphPanel's paintComponent
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
+        // Draw the background image if it exists
+        if (backgroundImage != null) {
+            g.drawImage(backgroundImage, 0, 0, getWidth(), getHeight(), this);
+        }
         Graphics2D g2 = (Graphics2D) g.create();
         drawGraph(g2);
         if (isDrawMST()) drawMST(g2); // Use the getter method here
@@ -170,39 +222,58 @@ public class CompleteGraphDrawer extends JFrame {
     }
 
     private void drawGraph(Graphics2D g2) {
+        // Anti-aliasing for smoother lines
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
         int radius = 200; // change this to make the graph larger or smaller
         int centerX = getWidth() / 2;
         int centerY = getHeight() / 2;
         double angleStep = 2 * Math.PI / numNodes;
+
+        // Draw monkey at the position of the root node (index 0)
+        int monkeyX = (int) (centerX + radius * Math.cos(0 * angleStep));
+        int monkeyY = (int) (centerY + radius * Math.sin(0 * angleStep));
+        if (monkeyImage != null) {
+            g2.drawImage(monkeyImage, monkeyX - monkeyWidth / 2, monkeyY - monkeyHeight / 2, monkeyWidth, monkeyHeight, null);
+        }
     
-        // Draw nodes
-        for (int i = 0; i < numNodes; i++) {
-            int x = (int) (centerX + radius * Math.cos(i * angleStep));
-            int y = (int) (centerY + radius * Math.sin(i * angleStep));
-            g2.fillOval(x - 5, y - 5, 10, 10);
+        // Draw nodes (bananas)
+        for (int i = 1; i < numNodes; i++) {
+            int bananaX = (int) (centerX + radius * Math.cos(i * angleStep));
+            int bananaY = (int) (centerY + radius * Math.sin(i * angleStep));
+            //g2.fillOval(x - 5, y - 5, 10, 10);
+            if (bananaImage != null) {
+                g2.drawImage(bananaImage, bananaX - bananaWidth / 2, bananaY - bananaHeight / 2, bananaWidth, bananaHeight, null);
+            }
         }
         
         // Set the alpha composite for transparency
         float alpha = 0.5f; // 50% transparent
         AlphaComposite alcom = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha);
         g2.setComposite(alcom);
+        // Stroke for edges
+        g2.setStroke(new BasicStroke(2));
+        // Bold for weights
+        g2.setFont(new Font("Arial", Font.BOLD, 15));
     
-        // Draw edges (complete graph) with weights
+        // Draw edges graph with weights
         for (int i = 0; i < numNodes; i++) {
             for (int j = i + 1; j < numNodes; j++) {
-                int x1 = (int) (centerX + radius * Math.cos(i * angleStep));
-                int y1 = (int) (centerY + radius * Math.sin(i * angleStep));
-                int x2 = (int) (centerX + radius * Math.cos(j * angleStep));
-                int y2 = (int) (centerY + radius * Math.sin(j * angleStep));
-    
-                // Draw edge
-                g2.drawLine(x1, y1, x2, y2);
-    
-                // Calculate position for weight label
-                int labelX = (x1 + x2) / 2;
-                int labelY = (y1 + y2) / 2;
-                // Draw weight label
-                g2.drawString(String.valueOf(weights[i][j]), labelX, labelY);
+                if (weights[i][j] != 0) {
+                    int x1 = (int) (centerX + radius * Math.cos(i * angleStep));
+                    int y1 = (int) (centerY + radius * Math.sin(i * angleStep));
+                    int x2 = (int) (centerX + radius * Math.cos(j * angleStep));
+                    int y2 = (int) (centerY + radius * Math.sin(j * angleStep));
+        
+                    // Draw edge
+                    g2.drawLine(x1, y1, x2, y2);
+        
+                    // Calculate position for weight label
+                    int labelX = (x1 + x2) / 2;
+                    int labelY = (y1 + y2) / 2;
+                    // Draw weight label
+                    g2.drawString(String.valueOf(weights[i][j]), labelX, labelY);
+                }
             }
         }
     }
@@ -214,8 +285,9 @@ public class CompleteGraphDrawer extends JFrame {
     
         // Drawing MST edges with a different color
         if (mstEdges != null) { // Check if MST edges exist
-            g2.setStroke(new BasicStroke(2)); // Thicker line for MST edges
+            g2.setStroke(new BasicStroke(6)); // Thicker line for MST edges
             g2.setColor(Color.RED); // Red color for MST edges
+            g2.setFont(new Font("Arial", Font.BOLD, 17));
             for (int v = 1; v < numNodes; v++) {
                 int u = mstEdges[v];
                 int x1 = (int) (centerX + radius * Math.cos(u * angleStep));
@@ -223,17 +295,20 @@ public class CompleteGraphDrawer extends JFrame {
                 int x2 = (int) (centerX + radius * Math.cos(v * angleStep));
                 int y2 = (int) (centerY + radius * Math.sin(v * angleStep));
                 g2.drawLine(x1, y1, x2, y2);
+
+                // Calculate position for weight label
+                int labelX = (x1 + x2) / 2;
+                int labelY = (y1 + y2) / 2;
+                // Set color for weights of MST edges
+                g2.setColor(Color.RED);
+                // Draw weight label
+                g2.drawString(String.valueOf(weights[u][v]), labelX, labelY);
             }
         }
     }
-
-
 
         @Override
         public Dimension getPreferredSize() {
             return new Dimension(500, 500);
         }
-    
-
-    
 }
